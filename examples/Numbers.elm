@@ -21,7 +21,7 @@ main =
         { init = ( Model 0 (Dmd.State { open = Nothing, keyMap = keyMap Qwerty, subjectActions = subjectActions }), Cmd.none )
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions shift
         }
 
 
@@ -30,7 +30,7 @@ main =
 
 
 type alias Model =
-    { number : Int
+    { number : Float
     , diamondMenu : Dmd.State Subject Msg
     }
 
@@ -45,6 +45,11 @@ type Subject
 
 type Msg
     = DmdMsg (Dmd.Msg Subject)
+    | Increment
+    | Decrement
+    | Double
+    | Halve
+    | Zero
     | NoOp
 
 
@@ -53,12 +58,32 @@ update msg model =
     case msg of
         DmdMsg dmdMsg ->
             let
-                ( newDmd, dmdCmd, mActionIndex ) =
+                ( newDmd, dmdCmd, mAction ) =
                     Dmd.update dmdMsg model.diamondMenu
             in
-            ( { model | diamondMenu = newDmd }, Cmd.none )
+            case mAction of
+                Just action ->
+                    update action { model | diamondMenu = newDmd }
 
-        NoOp ->
+                Nothing ->
+                    ( { model | diamondMenu = newDmd }, Cmd.map DmdMsg dmdCmd )
+
+        Increment ->
+            { model | number = model.number + 1 } ! [ Cmd.none ]
+
+        Decrement ->
+            { model | number = model.number - 1 } ! [ Cmd.none ]
+
+        Double ->
+            { model | number = model.number * 2 } ! [ Cmd.none ]
+
+        Halve ->
+            { model | number = model.number / 2 } ! [ Cmd.none ]
+
+        Zero ->
+            { model | number = 0 } ! [ Cmd.none ]
+
+        _ ->
             ( model, Cmd.none )
 
 
@@ -71,7 +96,8 @@ view model =
     Element.viewport stylesheet <|
         column Root
             [ height (percent 100), width (percent 100) ]
-            [ Dmd.view DmdMsg model.diamondMenu dmdConfig
+            [ el None ([ id "number", vary WithMenu True, padding 10 ] ++ Dmd.open DmdMsg Number) (bold (toString model.number))
+            , Dmd.view DmdMsg model.diamondMenu dmdConfig
             ]
 
 
@@ -79,7 +105,7 @@ dmdConfig : Dmd.Config Subject Style variation Msg
 dmdConfig =
     Dmd.Config
         { attributes = [ center, paddingTop 200 ]
-        , openKeyCode = 16
+        , openKeyCode = shift
         , modalStyle = None
         , menuStyle = DiamondMenu
         , gridStyle = None
@@ -99,7 +125,13 @@ subjectActions : Subject -> Array ( String, Msg )
 subjectActions subject =
     case subject of
         Number ->
-            Array.fromList [ ( "run", NoOp ) ]
+            Array.fromList
+                [ ( "increment", Increment )
+                , ( "decrement", Decrement )
+                , ( "double", Double )
+                , ( "halve", Halve )
+                , ( "zero", Zero )
+                ]
 
 
 
@@ -129,14 +161,14 @@ stylesheet : StyleSheet Style Variation
 stylesheet =
     Style.styleSheet
         [ style None []
+        , style Root
+            [ Color.background (Color.rgb 230 230 250) ]
         , style Heading
             [ Font.weight 700
             , variation One [ Font.size 21 ]
             , variation Two [ Font.size 18 ]
             , variation WithMenu [ focus [ Shadow.glow Color.blue 1 ] ]
             ]
-        , style Root
-            [ Color.background (Color.rgb 230 230 250) ]
         , style HR
             [ Border.top 2 ]
         , style DiamondMenu
