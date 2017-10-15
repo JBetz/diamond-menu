@@ -71,8 +71,8 @@ update msg ((State { open, keyMap, subjectActions }) as model) =
 
         PerformAction keyCode ->
             case open of
-                Just _ ->
-                    ( model, Cmd.none, getAction (Dict.get keyCode keyMap) (getSubject model) subjectActions )
+                Just subject ->
+                    ( model, Cmd.none, getAction (Dict.get keyCode keyMap) (subjectActions subject) )
 
                 Nothing ->
                     ( model, Cmd.none, Nothing )
@@ -121,11 +121,11 @@ subscriptions openKeyCode (State model) =
         ]
 
 
-getAction : Maybe Int -> Maybe subject -> (subject -> Array ( String, msg )) -> Maybe msg
-getAction mIndex mSubject subjectActions =
-    case ( mIndex, mSubject ) of
-        ( Just index, Just subject ) ->
-            case Array.get index (subjectActions subject) of
+getAction : Maybe Int -> Array ( String, msg ) -> Maybe msg
+getAction mIndex subjectActions =
+    case mIndex of
+        Just index ->
+            case Array.get index subjectActions of
                 Just ( name, msg ) ->
                     Just msg
 
