@@ -1,4 +1,4 @@
-module DiamondMenu exposing (Config(..), Msg, State(..), open, subscriptions, update, view)
+module DiamondMenu exposing (Config(..), Msg, State(..), getSubject, open, subscriptions, update, view)
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
@@ -60,8 +60,8 @@ type Msg subject
     | NoOp
 
 
-update : Msg subject -> State subject msg -> ( State subject msg, Cmd (Msg subject), Maybe Int )
-update msg ((State { open, keyMap }) as model) =
+update : Msg subject -> State subject msg -> ( State subject msg, Cmd (Msg subject), Maybe msg )
+update msg ((State { open, keyMap, subjectActions }) as model) =
     case msg of
         OpenMenu subject ->
             ( updateOpen (Just subject) model, focus "diamondmenu", Nothing )
@@ -72,7 +72,7 @@ update msg ((State { open, keyMap }) as model) =
         PerformAction keyCode ->
             case open of
                 Just _ ->
-                    ( model, Cmd.none, Dict.get keyCode keyMap )
+                    ( model, Cmd.none, getAction (Dict.get keyCode keyMap) (getSubject model) subjectActions )
 
                 Nothing ->
                     ( model, Cmd.none, Nothing )
@@ -119,6 +119,21 @@ subscriptions openKeyCode (State model) =
                         NoOp
             )
         ]
+
+
+getAction : Maybe Int -> Maybe subject -> (subject -> Array ( String, msg )) -> Maybe msg
+getAction mIndex mSubject subjectActions =
+    case ( mIndex, mSubject ) of
+        ( Just index, Just subject ) ->
+            case Array.get index (subjectActions subject) of
+                Just ( name, msg ) ->
+                    Just msg
+
+                Nothing ->
+                    Nothing
+
+        _ ->
+            Nothing
 
 
 
