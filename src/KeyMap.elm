@@ -1,4 +1,4 @@
-module Menu.KeyMap exposing (..)
+module KeyMap exposing (..)
 
 import Char exposing (KeyCode)
 import Dict exposing (Dict(..))
