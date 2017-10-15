@@ -8,7 +8,7 @@ import Element exposing (..)
 import Element.Attributes exposing (..)
 import Element.Events exposing (..)
 import Json.Decode as Json
-import Keyboard as Keyboard
+import Keyboard
 import Task
 
 
@@ -129,7 +129,7 @@ open : (Msg subject -> msg) -> subject -> List (Attribute variation msg)
 open transform subject =
     [ attribute "tabindex" "10"
     , onWithOptions
-        "mousemove"
+        "mouseenter"
         { preventDefault = False, stopPropagation = True }
         (Json.at [ "target", "id" ] Json.string
             |> Json.map TriggerFocus
