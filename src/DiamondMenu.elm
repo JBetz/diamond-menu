@@ -1,4 +1,4 @@
-module DiamondMenu exposing (Config(..), Msg, State(..), getSubject, open, subscriptions, update, view)
+module DiamondMenu exposing (Config(..), Msg, State(..), open, subscriptions, update, view)
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
@@ -35,11 +35,6 @@ type Config subject style variation msg
         , actionWidth : Length
         , actionHeight : Length
         }
-
-
-getSubject : State subject msg -> Maybe subject
-getSubject (State { open }) =
-    open
 
 
 updateOpen : Maybe subject -> State subject msg -> State subject msg
@@ -186,7 +181,7 @@ view transform (State { open, subjectActions }) (Config { attributes, modalStyle
                         []
                         { columns = List.repeat 5 actionWidth
                         , rows = List.repeat 5 actionHeight
-                        , cells = List.map (\i -> viewAction i (Array.get i (subjectActions subject)) actionStyle) (List.range 0 8)
+                        , cells = List.map (\i -> viewAction i actionStyle (Array.get i (subjectActions subject))) (List.range 0 8)
                         }
                     ]
 
@@ -194,10 +189,10 @@ view transform (State { open, subjectActions }) (Config { attributes, modalStyle
             Element.empty
 
 
-viewAction : Int -> Maybe ( String, msg ) -> style -> OnGrid (Element style variation msg)
-viewAction index mAction actionStyle =
+viewAction : Int -> style -> Maybe ( String, msg ) -> OnGrid (Element style variation msg)
+viewAction index actionStyle mAction =
     cell
-        { start = getCoordinates index
+        { start = getActionCoordinates index
         , width = 1
         , height = 1
         , content =
@@ -215,8 +210,8 @@ viewAction index mAction actionStyle =
         }
 
 
-getCoordinates : Int -> ( Int, Int )
-getCoordinates index =
+getActionCoordinates : Int -> ( Int, Int )
+getActionCoordinates index =
     case index of
         0 ->
             ( 2, 0 )
