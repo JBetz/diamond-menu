@@ -1,4 +1,4 @@
-module DiamondMenu exposing (Config, State, open, update, view)
+module DiamondMenu exposing (Config(..), Msg, State(..), open, subscriptions, update, view)
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
