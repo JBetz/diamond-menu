@@ -99,9 +99,16 @@ view model =
     Element.viewport stylesheet <|
         column Root
             [ height (percent 100), width (percent 100), padding 20 ]
-            [ el Object ([ id "number", vary WithMenu True, padding 20, width (px (toFloat <| 40 + 10 * (String.length <| toString model.number))) ] ++ Dmd.open DmdMsg Number) (bold (toString model.number))
+            [ el Object
+                ([ id "number", vary WithMenu True, padding 20, stringWidth <| toString model.number ] ++ Dmd.open DmdMsg Number)
+                (bold (toString model.number))
             , Dmd.view DmdMsg model.diamondMenu dmdConfig
             ]
+
+
+stringWidth : String -> Attribute variation msg
+stringWidth string =
+    width (px (toFloat <| 40 + 10 * (String.length <| string)))
 
 
 dmdConfig : Dmd.Config Subject Style variation Msg
