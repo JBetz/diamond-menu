@@ -1,4 +1,4 @@
-module DiamondMenu exposing (Config(..), Msg, State(..), open, subscriptions, update, view)
+module DiamondMenu exposing (Config, Msg, State(..), config, open, subscriptions, update, view)
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
@@ -8,6 +8,7 @@ import Element exposing (..)
 import Element.Attributes exposing (..)
 import Element.Events exposing (..)
 import Json.Decode as Json
+import KeyMap exposing (shift)
 import Keyboard
 import Task
 
@@ -25,15 +26,49 @@ type State subject msg
 
 type Config subject style variation msg
     = Config
-        { attributes : List (Attribute variation msg)
-        , openKeyCode : KeyCode
-        , modalStyle : style
-        , menuStyle : style
-        , gridStyle : style
-        , subjectStyle : style
-        , actionStyle : style
+        { openKeyCode : KeyCode
+        , attributes : List (Attribute variation msg)
         , actionWidth : Length
         , actionHeight : Length
+        , styling : Styling style
+        }
+
+
+type alias Styling style =
+    { modal : style
+    , menu : style
+    , grid : style
+    , subject : style
+    , action : style
+    }
+
+
+config : Styling style -> Config subject style variation msg
+config styling =
+    Config
+        { openKeyCode = shift
+        , attributes = [ center, paddingTop 100 ]
+        , actionWidth = px 100
+        , actionHeight = px 50
+        , styling = styling
+        }
+
+
+customConfig :
+    { openKeyCode : KeyCode
+    , attributes : List (Attribute variation msg)
+    , actionWidth : Length
+    , actionHeight : Length
+    , styling : Styling style
+    }
+    -> Config subject style variation msg
+customConfig { openKeyCode, attributes, actionWidth, actionHeight, styling } =
+    Config
+        { openKeyCode = openKeyCode
+        , attributes = attributes
+        , actionWidth = actionWidth
+        , actionHeight = actionHeight
+        , styling = styling
         }
 
 
@@ -49,7 +84,7 @@ updateOpen newOpen (State { open, keyMap, subjectActions }) =
 type Msg subject
     = OpenMenu subject
     | CloseMenu
-    | PerformAction KeyCode
+    | PerformAction Int
     | TriggerFocus Dom.Id
     | TriggerBlur Dom.Id
     | NoOp
@@ -59,15 +94,15 @@ update : Msg subject -> State subject msg -> ( State subject msg, Cmd (Msg subje
 update msg ((State { open, keyMap, subjectActions }) as model) =
     case msg of
         OpenMenu subject ->
-            ( updateOpen (Just subject) model, focus "diamondmenu", Nothing )
+            ( updateOpen (Just subject) model, Cmd.none, Nothing )
 
         CloseMenu ->
             ( updateOpen Nothing model, Cmd.none, Nothing )
 
-        PerformAction keyCode ->
+        PerformAction index ->
             case open of
                 Just subject ->
-                    ( model, Cmd.none, getAction (Dict.get keyCode keyMap) (subjectActions subject) )
+                    ( model, Cmd.none, getAction index (subjectActions subject) )
 
                 Nothing ->
                     ( model, Cmd.none, Nothing )
@@ -94,40 +129,13 @@ blur id =
         |> Task.attempt (always NoOp)
 
 
-subscriptions : KeyCode -> State subject msg -> Sub (Msg subject)
-subscriptions openKeyCode (State model) =
-    Sub.batch
-        [ Keyboard.ups
-            (\keyCode ->
-                if keyCode == openKeyCode then
-                    CloseMenu
-                else
-                    NoOp
-            )
-        , Keyboard.downs
-            (\keyCode ->
-                case model.open of
-                    Just _ ->
-                        PerformAction keyCode
+getAction : Int -> Array ( String, msg ) -> Maybe msg
+getAction index subjectActions =
+    case Array.get index subjectActions of
+        Just ( name, msg ) ->
+            Just msg
 
-                    Nothing ->
-                        NoOp
-            )
-        ]
-
-
-getAction : Maybe Int -> Array ( String, msg ) -> Maybe msg
-getAction mIndex subjectActions =
-    case mIndex of
-        Just index ->
-            case Array.get index subjectActions of
-                Just ( name, msg ) ->
-                    Just msg
-
-                Nothing ->
-                    Nothing
-
-        _ ->
+        Nothing ->
             Nothing
 
 
@@ -154,7 +162,7 @@ open transform subject =
         )
     , onWithOptions
         "keydown"
-        { preventDefault = False, stopPropagation = False }
+        { preventDefault = True, stopPropagation = False }
         (keyCode
             |> Json.map
                 (\keyCode ->
@@ -169,19 +177,19 @@ open transform subject =
 
 
 view : (Msg subject -> msg) -> State subject msg -> Config subject style variation msg -> Element style variation msg
-view transform (State { open, subjectActions }) (Config { attributes, modalStyle, menuStyle, subjectStyle, actionStyle, gridStyle, actionWidth, actionHeight }) =
+view transform (State { open, keyMap, subjectActions }) (Config { attributes, actionWidth, actionHeight, styling }) =
     case open of
         Just subject ->
-            modal modalStyle attributes <|
-                column menuStyle
+            modal styling.modal attributes <|
+                column styling.menu
                     [ id "diamondmenu", padding 10, spacing 20, attribute "tabindex" "-1" ]
-                    [ h2 subjectStyle [ center ] (text (toString subject))
+                    [ h2 styling.subject [ center ] (text (toString subject))
                     , grid
-                        gridStyle
+                        styling.grid
                         []
                         { columns = List.repeat 5 actionWidth
                         , rows = List.repeat 5 actionHeight
-                        , cells = List.map (\i -> viewAction i actionStyle (Array.get i (subjectActions subject))) (List.range 0 8)
+                        , cells = List.map (\i -> viewAction i styling.action (Array.get i (subjectActions subject))) (List.range 0 8)
                         }
                     ]
 
@@ -196,7 +204,7 @@ viewAction index actionStyle mAction =
         , width = 1
         , height = 1
         , content =
-            h2 actionStyle
+            el actionStyle
                 [ center ]
                 (text
                     (case mAction of
@@ -242,3 +250,34 @@ getActionCoordinates index =
 
         _ ->
             ( 0, 0 )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : State subject msg -> Config subject style variation msg -> Sub (Msg subject)
+subscriptions (State { open, keyMap }) (Config { openKeyCode }) =
+    Sub.batch
+        [ Keyboard.ups
+            (\keyCode ->
+                if keyCode == openKeyCode then
+                    CloseMenu
+                else
+                    NoOp
+            )
+        , Keyboard.downs
+            (\keyCode ->
+                case open of
+                    Just _ ->
+                        case Dict.get keyCode keyMap of
+                            Just index ->
+                                PerformAction index
+
+                            Nothing ->
+                                NoOp
+
+                    Nothing ->
+                        NoOp
+            )
+        ]
