@@ -50,6 +50,7 @@ type Msg
     | Double
     | Halve
     | Zero
+    | Round
     | NoOp
 
 
@@ -83,6 +84,9 @@ update msg model =
         Zero ->
             { model | number = 0 } ! [ Cmd.none ]
 
+        Round ->
+            { model | number = toFloat <| round model.number } ! [ Cmd.none ]
+
         _ ->
             ( model, Cmd.none )
 
@@ -95,30 +99,26 @@ view : Model -> Html Msg
 view model =
     Element.viewport stylesheet <|
         column Root
-            [ height (percent 100), width (percent 100) ]
-            [ el None ([ id "number", vary WithMenu True, padding 10 ] ++ Dmd.open DmdMsg Number) (bold (toString model.number))
+            [ height (percent 100), width (percent 100), padding 20 ]
+            [ el Object ([ id "number", vary WithMenu True, padding 20, width (px (toFloat <| 40 + 10 * (String.length <| toString model.number))) ] ++ Dmd.open DmdMsg Number) (bold (toString model.number))
             , Dmd.view DmdMsg model.diamondMenu dmdConfig
             ]
 
 
 dmdConfig : Dmd.Config Subject Style variation Msg
 dmdConfig =
-    Dmd.Config
-        { attributes = [ center, paddingTop 200 ]
-        , openKeyCode = shift
-        , modalStyle = None
-        , menuStyle = DiamondMenu
-        , gridStyle = None
-        , subjectStyle = DiamondMenuSubject
-        , actionStyle = DiamondMenuAction
-        , actionWidth = px 90
-        , actionHeight = px 50
+    Dmd.config
+        { modal = None
+        , menu = DiamondMenu
+        , grid = None
+        , subject = DiamondMenuSubject
+        , action = DiamondMenuAction
         }
 
 
 subscriptions : KeyCode -> Model -> Sub Msg
 subscriptions openKeyCode model =
-    Sub.map DmdMsg (Dmd.subscriptions openKeyCode model.diamondMenu)
+    Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu dmdConfig)
 
 
 subjectActions : Subject -> Array ( String, Msg )
@@ -126,11 +126,12 @@ subjectActions subject =
     case subject of
         Number ->
             Array.fromList
-                [ ( "increment", Increment )
-                , ( "decrement", Decrement )
-                , ( "double", Double )
-                , ( "halve", Halve )
-                , ( "zero", Zero )
+                [ ( "zero (w)", Zero )
+                , ( "decrement (q)", Decrement )
+                , ( "increment (e)", Increment )
+                , ( "halve (a)", Halve )
+                , ( "round (s)", Round )
+                , ( "double (e)", Double )
                 ]
 
 
@@ -140,9 +141,8 @@ subjectActions subject =
 
 type Style
     = None
-    | Heading
     | Root
-    | HR
+    | Object
     | DiamondMenu
     | DiamondMenuSubject
     | DiamondMenuAction
@@ -163,14 +163,10 @@ stylesheet =
         [ style None []
         , style Root
             [ Color.background (Color.rgb 230 230 250) ]
-        , style Heading
-            [ Font.weight 700
-            , variation One [ Font.size 21 ]
-            , variation Two [ Font.size 18 ]
+        , style Object
+            [ Font.center
             , variation WithMenu [ focus [ Shadow.glow Color.blue 1 ] ]
             ]
-        , style HR
-            [ Border.top 2 ]
         , style DiamondMenu
             [ Color.background white
             , Shadow.simple
