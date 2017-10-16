@@ -7,7 +7,6 @@ import Element exposing (..)
 import Element.Attributes exposing (..)
 import Html exposing (Html)
 import KeyMap exposing (..)
-import Keyboard exposing (KeyCode)
 import Style exposing (..)
 import Style.Border as Border
 import Style.Color as Color
@@ -21,7 +20,7 @@ main =
         { init = ( Model 0 (Dmd.State { open = Nothing, keyMap = keyMap Qwerty, subjectActions = subjectActions }), Cmd.none )
         , update = update
         , view = view
-        , subscriptions = subscriptions shift
+        , subscriptions = \model -> Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu dmdConfig)
         }
 
 
@@ -114,11 +113,6 @@ dmdConfig =
         , subject = DiamondMenuSubject
         , action = DiamondMenuAction
         }
-
-
-subscriptions : KeyCode -> Model -> Sub Msg
-subscriptions openKeyCode model =
-    Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu dmdConfig)
 
 
 subjectActions : Subject -> Array ( String, Msg )

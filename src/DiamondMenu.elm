@@ -8,8 +8,8 @@ import Element exposing (..)
 import Element.Attributes exposing (..)
 import Element.Events exposing (..)
 import Json.Decode as Json
-import KeyMap exposing (shift)
 import Keyboard
+import Keyboard.Extra exposing (Key(..), fromCode)
 import Task
 
 
@@ -26,7 +26,7 @@ type State subject msg
 
 type Config subject style variation msg
     = Config
-        { openKeyCode : KeyCode
+        { openKey : Key
         , attributes : List (Attribute variation msg)
         , actionWidth : Length
         , actionHeight : Length
@@ -46,7 +46,7 @@ type alias Styling style =
 config : Styling style -> Config subject style variation msg
 config styling =
     Config
-        { openKeyCode = shift
+        { openKey = Shift
         , attributes = [ center, paddingTop 100 ]
         , actionWidth = px 100
         , actionHeight = px 50
@@ -55,16 +55,16 @@ config styling =
 
 
 customConfig :
-    { openKeyCode : KeyCode
+    { openKey : Key
     , attributes : List (Attribute variation msg)
     , actionWidth : Length
     , actionHeight : Length
     , styling : Styling style
     }
     -> Config subject style variation msg
-customConfig { openKeyCode, attributes, actionWidth, actionHeight, styling } =
+customConfig { openKey, attributes, actionWidth, actionHeight, styling } =
     Config
-        { openKeyCode = openKeyCode
+        { openKey = openKey
         , attributes = attributes
         , actionWidth = actionWidth
         , actionHeight = actionHeight
@@ -257,11 +257,11 @@ getActionCoordinates index =
 
 
 subscriptions : State subject msg -> Config subject style variation msg -> Sub (Msg subject)
-subscriptions (State { open, keyMap }) (Config { openKeyCode }) =
+subscriptions (State { open, keyMap }) (Config { openKey }) =
     Sub.batch
         [ Keyboard.ups
             (\keyCode ->
-                if keyCode == openKeyCode then
+                if fromCode keyCode == openKey then
                     CloseMenu
                 else
                     NoOp
