@@ -1,27 +1,44 @@
 module Main exposing (..)
 
-import Array exposing (Array)
-import Color exposing (..)
 import DiamondMenu as Dmd
 import Element exposing (..)
 import Element.Attributes exposing (..)
+import EveryDict exposing (EveryDict)
 import Html exposing (Html)
 import KeyMap exposing (..)
-import Style exposing (..)
-import Style.Border as Border
-import Style.Color as Color
-import Style.Font as Font
-import Style.Shadow as Shadow
 
 
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( Model 0 (Dmd.State { open = Nothing, keyMap = keyMap Qwerty, subjectActions = subjectActions }), Cmd.none )
+        { init = ( initialModel, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = \model -> Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu dmdConfig)
+        , subscriptions = \model -> Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu Dmd.defaultConfig)
         }
+
+
+initialModel : Model
+initialModel =
+    { number = 0
+    , diamondMenu =
+        Dmd.State
+            { open = Nothing
+            , keyMap = keyMap Qwerty
+            , subjectActions =
+                EveryDict.fromList
+                    [ ( Number
+                      , [ ( "zero (w)", Zero )
+                        , ( "decrement (q)", Decrement )
+                        , ( "increment (e)", Increment )
+                        , ( "halve (a)", Halve )
+                        , ( "round (s)", Round )
+                        , ( "double (e)", Double )
+                        ]
+                      )
+                    ]
+            }
+    }
 
 
 
@@ -96,86 +113,14 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    Element.viewport stylesheet <|
-        column Root
+    Element.viewport Dmd.defaultStyleSheet <|
+        column Dmd.None
             [ height (percent 100), width (percent 100), padding 20 ]
-            [ el Object
-                ([ id "number", vary WithMenu True, padding 20, stringWidth <| toString model.number ] ++ Dmd.withMenu DmdMsg Number)
-                (bold (toString model.number))
-            , Dmd.view DmdMsg model.diamondMenu dmdConfig
+            [ Dmd.withMenu DmdMsg Number (el Dmd.None [ width (px 50), height (px 50) ] <| bold (toString model.number))
+            , Dmd.view DmdMsg model.diamondMenu Dmd.defaultConfig
             ]
 
 
 stringWidth : String -> Attribute variation msg
 stringWidth string =
     width (px (toFloat <| 40 + 10 * (String.length <| string)))
-
-
-dmdConfig : Dmd.Config Subject Style variation Msg
-dmdConfig =
-    Dmd.config
-        { modal = None
-        , menu = DiamondMenu
-        , grid = None
-        , subject = DiamondMenuSubject
-        , action = DiamondMenuAction
-        }
-
-
-subjectActions : Subject -> List ( String, Msg )
-subjectActions subject =
-    case subject of
-        Number ->
-            [ ( "zero (w)", Zero )
-            , ( "decrement (q)", Decrement )
-            , ( "increment (e)", Increment )
-            , ( "halve (a)", Halve )
-            , ( "round (s)", Round )
-            , ( "double (e)", Double )
-            ]
-
-
-
--- STYLES
-
-
-type Style
-    = None
-    | Root
-    | Object
-    | DiamondMenu
-    | DiamondMenuSubject
-    | DiamondMenuAction
-
-
-type Variation
-    = Success
-    | Failure
-    | One
-    | Two
-    | WithMenu
-    | WithoutMenu
-
-
-stylesheet : StyleSheet Style Variation
-stylesheet =
-    Style.styleSheet
-        [ style None []
-        , style Root
-            [ Color.background (Color.rgb 230 230 250) ]
-        , style Object
-            [ Font.center
-            , variation WithMenu [ focus [ Shadow.glow Color.blue 1 ] ]
-            ]
-        , style DiamondMenu
-            [ Color.background white
-            , Shadow.simple
-            , Border.rounded 20
-            ]
-        , style DiamondMenuSubject
-            [ Font.weight 700
-            , Font.size 18
-            ]
-        , style DiamondMenuAction
-            [ Font.center ]
-        ]
