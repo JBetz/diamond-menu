@@ -100,7 +100,7 @@ view model =
         column Root
             [ height (percent 100), width (percent 100), padding 20 ]
             [ el Object
-                ([ id "number", vary WithMenu True, padding 20, stringWidth <| toString model.number ] ++ Dmd.open DmdMsg Number)
+                ([ id "number", vary WithMenu True, padding 20, stringWidth <| toString model.number ] ++ Dmd.withMenu DmdMsg Number)
                 (bold (toString model.number))
             , Dmd.view DmdMsg model.diamondMenu dmdConfig
             ]
@@ -122,18 +122,17 @@ dmdConfig =
         }
 
 
-subjectActions : Subject -> Array ( String, Msg )
+subjectActions : Subject -> List ( String, Msg )
 subjectActions subject =
     case subject of
         Number ->
-            Array.fromList
-                [ ( "zero (w)", Zero )
-                , ( "decrement (q)", Decrement )
-                , ( "increment (e)", Increment )
-                , ( "halve (a)", Halve )
-                , ( "round (s)", Round )
-                , ( "double (e)", Double )
-                ]
+            [ ( "zero (w)", Zero )
+            , ( "decrement (q)", Decrement )
+            , ( "increment (e)", Increment )
+            , ( "halve (a)", Halve )
+            , ( "round (s)", Round )
+            , ( "double (e)", Double )
+            ]
 
 
 

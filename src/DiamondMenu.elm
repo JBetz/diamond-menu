@@ -1,4 +1,4 @@
-module DiamondMenu exposing (Config, Msg, State(..), config, open, subscriptions, update, view)
+module DiamondMenu exposing (Config, Msg, State(..), config, subscriptions, update, view, withMenu)
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
@@ -20,7 +20,7 @@ type State subject msg
     = State
         { open : Maybe subject
         , keyMap : Dict KeyCode Int
-        , subjectActions : subject -> Array ( String, msg )
+        , subjectActions : subject -> List ( String, msg )
         }
 
 
@@ -102,7 +102,7 @@ update msg ((State { open, keyMap, subjectActions }) as model) =
         PerformAction index ->
             case open of
                 Just subject ->
-                    ( model, Cmd.none, getAction index (subjectActions subject) )
+                    ( model, Cmd.none, getAction index (Array.fromList <| subjectActions subject) )
 
                 Nothing ->
                     ( model, Cmd.none, Nothing )
@@ -143,8 +143,8 @@ getAction index subjectActions =
 -- VIEW
 
 
-open : (Msg subject -> msg) -> subject -> List (Attribute variation msg)
-open transform subject =
+withMenu : (Msg subject -> msg) -> subject -> List (Attribute variation msg)
+withMenu transform subject =
     [ attribute "tabindex" "10"
     , onWithOptions
         "mouseenter"
@@ -189,7 +189,7 @@ view transform (State { open, keyMap, subjectActions }) (Config { attributes, ac
                         []
                         { columns = List.repeat 5 actionWidth
                         , rows = List.repeat 5 actionHeight
-                        , cells = List.map (\i -> viewAction i styling.action (Array.get i (subjectActions subject))) (List.range 0 8)
+                        , cells = List.map (\i -> viewAction i styling.action (Array.get i (Array.fromList <| subjectActions subject))) (List.range 0 8)
                         }
                     ]
 
