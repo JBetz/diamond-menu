@@ -1,11 +1,18 @@
 module Main exposing (..)
 
+import Color exposing (..)
 import DiamondMenu as Dmd
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import EveryDict exposing (EveryDict)
 import Html exposing (Html)
 import KeyMap exposing (..)
+import Keyboard.Extra exposing (Key(Shift))
+import Style exposing (..)
+import Style.Border as Border
+import Style.Color as Color
+import Style.Font as Font
+import Style.Shadow as Shadow
 
 
 main : Program Never Model Msg
@@ -14,7 +21,7 @@ main =
         { init = ( initialModel, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = \model -> Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu Dmd.defaultConfig)
+        , subscriptions = \model -> Sub.map DmdMsg (Dmd.subscriptions model.diamondMenu dmdConfig)
         }
 
 
@@ -39,6 +46,17 @@ initialModel =
                     ]
             }
     }
+
+
+dmdConfig : Dmd.Config subject Style variation msg
+dmdConfig =
+    Dmd.defaultConfig
+        { modal = None
+        , menu = DiamondMenu
+        , grid = None
+        , subject = DiamondMenuSubject
+        , action = DiamondMenuAction
+        }
 
 
 
@@ -112,15 +130,64 @@ update msg model =
 
 
 view : Model -> Html Msg
-view model =
-    Element.viewport Dmd.defaultStyleSheet <|
-        column Dmd.None
+view { number, diamondMenu } =
+    Element.viewport stylesheet <|
+        column Root
             [ height (percent 100), width (percent 100), padding 20 ]
-            [ Dmd.withMenu DmdMsg Number (el Dmd.None [ width (px 50), height (px 50) ] <| bold (toString model.number))
-            , Dmd.view DmdMsg model.diamondMenu Dmd.defaultConfig
+            [ el Object ([ stringWidth <| toString number, height (px 50), padding 20, vary WithMenu True ] ++ Dmd.withMenu Shift DmdMsg Number) <|
+                bold (toString number)
+            , Dmd.view DmdMsg diamondMenu dmdConfig
             ]
 
 
 stringWidth : String -> Attribute variation msg
 stringWidth string =
     width (px (toFloat <| 40 + 10 * (String.length <| string)))
+
+
+
+-- STYLING
+
+
+type Style
+    = None
+    | Root
+    | Object
+    | DiamondMenu
+    | DiamondMenuSubject
+    | DiamondMenuAction
+
+
+type Variation
+    = WithMenu
+
+
+stylesheet : StyleSheet Style Variation
+stylesheet =
+    Style.styleSheet
+        [ style None []
+        , style Root
+            [ Color.background (Color.rgb 230 230 250) ]
+        , style Object
+            [ Font.center
+            , variation WithMenu [ focus [ Shadow.glow Color.blue 1 ] ]
+            ]
+        , style DiamondMenu
+            [ Color.background white
+            , Shadow.simple
+            , Border.rounded 20
+            ]
+        , style DiamondMenuSubject
+            [ Font.center
+            , Font.weight 700
+            , Font.size 18
+            , variation WithMenu [ Style.focus [ Shadow.glow Color.blue 1 ] ]
+            ]
+        , style DiamondMenu
+            [ Color.background white
+            , Shadow.simple
+            , Border.rounded 20
+            ]
+        , style DiamondMenuAction
+            [ Font.center ]
+        ]
