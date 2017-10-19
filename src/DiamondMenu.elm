@@ -1,8 +1,7 @@
-module DiamondMenu exposing (Config, Msg, State(..), Style(DiamondMenuSubject, None), Variation(WithMenu), customConfig, defaultConfig, defaultStyleSheet, subscriptions, update, view, withMenu)
+module DiamondMenu exposing (Config, Msg, State(..), customConfig, defaultConfig, subscriptions, update, view, withMenu)
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
-import Color exposing (..)
 import Dict exposing (Dict)
 import Dom
 import Element exposing (..)
@@ -12,11 +11,6 @@ import EveryDict exposing (EveryDict)
 import Json.Decode as Json
 import Keyboard
 import Keyboard.Extra exposing (Key(..), fromCode)
-import Style exposing (..)
-import Style.Border as Border
-import Style.Color as Color
-import Style.Font as Font
-import Style.Shadow as Shadow
 import Task
 
 
@@ -50,20 +44,14 @@ type alias Styling style =
     }
 
 
-defaultConfig : Config subject Style variation msg
-defaultConfig =
+defaultConfig : Styling style -> Config subject style variation msg
+defaultConfig styling =
     Config
         { openKey = Shift
         , attributes = [ center, paddingTop 100 ]
         , actionWidth = px 100
         , actionHeight = px 50
-        , styling =
-            { modal = None
-            , menu = DiamondMenu
-            , grid = None
-            , subject = DiamondMenuSubject
-            , action = DiamondMenuAction
-            }
+        , styling = styling
         }
 
 
@@ -88,36 +76,6 @@ customConfig { openKey, attributes, actionWidth, actionHeight, styling } =
 updateOpen : Maybe subject -> State subject msg -> State subject msg
 updateOpen newOpen (State { open, keyMap, subjectActions }) =
     State { open = newOpen, keyMap = keyMap, subjectActions = subjectActions }
-
-
-type Style
-    = None
-    | DiamondMenu
-    | DiamondMenuSubject
-    | DiamondMenuAction
-
-
-type Variation
-    = WithMenu
-    | WithoutMenu
-
-
-defaultStyleSheet : StyleSheet Style Variation
-defaultStyleSheet =
-    Style.styleSheet
-        [ style None []
-        , style DiamondMenuSubject
-            [ Font.center
-            , variation WithMenu [ Style.focus [ Shadow.glow Color.blue 1 ] ]
-            ]
-        , style DiamondMenu
-            [ Color.background white
-            , Shadow.simple
-            , Border.rounded 20
-            ]
-        , style DiamondMenuAction
-            [ Font.center ]
-        ]
 
 
 
@@ -194,41 +152,38 @@ getAction index subject subjectActions =
 -- VIEW
 
 
-withMenu : (Msg subject -> msg) -> subject -> Element Style Variation msg -> Element Style Variation msg
-withMenu transform subject element =
-    el DiamondMenuSubject
-        [ vary WithMenu True
-        , attribute "tabindex" "10"
-        , id (toString subject)
-        , onWithOptions
-            "mouseenter"
-            { preventDefault = False, stopPropagation = True }
-            (Json.at [ "target", "id" ] Json.string
-                |> Json.map TriggerFocus
-                |> Json.map transform
-            )
-        , onWithOptions
-            "mouseleave"
-            { preventDefault = False, stopPropagation = True }
-            (Json.at [ "target", "id" ] Json.string
-                |> Json.map TriggerBlur
-                |> Json.map transform
-            )
-        , onWithOptions
-            "keydown"
-            { preventDefault = True, stopPropagation = False }
-            (keyCode
-                |> Json.map
-                    (\keyCode ->
-                        if keyCode == 16 then
-                            OpenMenu subject
-                        else
-                            NoOp
-                    )
-                |> Json.map transform
-            )
-        ]
-        element
+withMenu : Key -> (Msg subject -> msg) -> subject -> List (Attribute variation msg)
+withMenu openKey transform subject =
+    [ id (toString subject)
+    , attribute "tabindex" "10"
+    , onWithOptions
+        "mouseenter"
+        { preventDefault = False, stopPropagation = True }
+        (Json.at [ "target", "id" ] Json.string
+            |> Json.map TriggerFocus
+            |> Json.map transform
+        )
+    , onWithOptions
+        "mouseleave"
+        { preventDefault = False, stopPropagation = True }
+        (Json.at [ "target", "id" ] Json.string
+            |> Json.map TriggerBlur
+            |> Json.map transform
+        )
+    , onWithOptions
+        "keydown"
+        { preventDefault = True, stopPropagation = False }
+        (keyCode
+            |> Json.map
+                (\keyCode ->
+                    if fromCode keyCode == openKey then
+                        OpenMenu subject
+                    else
+                        NoOp
+                )
+            |> Json.map transform
+        )
+    ]
 
 
 view : (Msg subject -> msg) -> State subject msg -> Config subject style variation msg -> Element style variation msg
