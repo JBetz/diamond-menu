@@ -1,8 +1,8 @@
-module KeyMap exposing (KeyMap, KeyLayout, keyMap)
+module KeyMap exposing (KeyMap, KeyLayout(..), keyMap)
 
 {-|
 This module is for defining mappings between keyboard layouts and menu selection
-characters.
+keys.
 
 # Model
 @docs KeyMap, KeyLayout, keyMap
@@ -17,7 +17,11 @@ import Keyboard.Extra exposing (Key(..), toCode)
 type alias KeyMap =
     Dict KeyCode Int
 
-{-| -}
+{-| Currently supported keyboard layouts. If the layout you need isn't on this list,
+create a mapping using the existing source as an example, and open a PR for it to be
+added to the library.
+
+-}
 type KeyLayout
     = Qwerty
     | Dvorak
