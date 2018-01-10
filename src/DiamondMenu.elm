@@ -1,4 +1,23 @@
-module DiamondMenu exposing (Config, Msg, State(..), customConfig, defaultConfig, subscriptions, update, view, withMenu)
+module DiamondMenu exposing (Config, Msg, State(..), config, configWithDefaults, subscriptions, update, view, withMenu)
+
+{-|
+This module is for creating diamond menus, an original UI element that cleanly separates
+subjects from capabilities and uses positional semantics to transcend the problems with 
+keyboard shortcuts and context menus.
+
+
+[examples][https://github.com/JBetz/diamond-menu/tree/master/examples]
+
+# State
+@docs State, Msg, update
+
+# Configuration
+@docs config, configWithDefaults, subscriptions
+
+# View
+@docs view, withMenu
+
+-}
 
 import Array exposing (Array)
 import Char exposing (KeyCode)
@@ -13,10 +32,11 @@ import Keyboard
 import Keyboard.Extra exposing (Key(..), fromCode)
 import Task
 
+{-| Dynamic properties of menu. Tracks whether the menu is open, which keyboard layout
+the user is currently using, and what actions are available for each menu subject. This
+should live in your Modal.
 
--- MODEL
-
-
+-}
 type State subject msg
     = State
         { open : Maybe subject
@@ -24,7 +44,11 @@ type State subject msg
         , subjectActions : EveryDict subject (List ( String, msg ))
         }
 
+{-| Static properties of menu. Key used to open the menu, layout attributes, menu item sizing,
+and styling of subcomponents. These should be separate from your model as they will not change
+during application runtime. 
 
+-}
 type Config subject style variation msg
     = Config
         { openKey : Key
@@ -34,7 +58,9 @@ type Config subject style variation msg
         , styling : Styling style
         }
 
+{-| Styling properties of menu. 
 
+-}
 type alias Styling style =
     { modal : style
     , menu : style
@@ -43,19 +69,10 @@ type alias Styling style =
     , action : style
     }
 
+{-| Constructor for fullly specified Config value. 
 
-defaultConfig : Styling style -> Config subject style variation msg
-defaultConfig styling =
-    Config
-        { openKey = Shift
-        , attributes = [ center, paddingTop 100 ]
-        , actionWidth = px 100
-        , actionHeight = px 50
-        , styling = styling
-        }
-
-
-customConfig :
+-}
+config :
     { openKey : Key
     , attributes : List (Attribute variation msg)
     , actionWidth : Length
@@ -63,7 +80,7 @@ customConfig :
     , styling : Styling style
     }
     -> Config subject style variation msg
-customConfig { openKey, attributes, actionWidth, actionHeight, styling } =
+config { openKey, attributes, actionWidth, actionHeight, styling } =
     Config
         { openKey = openKey
         , attributes = attributes
@@ -72,6 +89,19 @@ customConfig { openKey, attributes, actionWidth, actionHeight, styling } =
         , styling = styling
         }
 
+{-| Constructor for partially specified Config value. Open key and layout attributes
+are provided with defaults.
+
+-}
+configWithDefaults : Styling style -> Config subject style variation msg
+configWithDefaults styling =
+    Config
+        { openKey = Shift
+        , attributes = [ center, paddingTop 100 ]
+        , actionWidth = px 100
+        , actionHeight = px 50
+        , styling = styling
+        }
 
 updateOpen : Maybe subject -> State subject msg -> State subject msg
 updateOpen newOpen (State { open, keyMap, subjectActions }) =
@@ -81,7 +111,9 @@ updateOpen newOpen (State { open, keyMap, subjectActions }) =
 
 -- UPDATE
 
+{-| Messages for updating menu stat.
 
+-}
 type Msg subject
     = OpenMenu subject
     | CloseMenu
@@ -90,7 +122,11 @@ type Msg subject
     | TriggerBlur Dom.Id
     | NoOp
 
+{-| Update function. Note that the return type is a triple. The third value is the message
+to be send to the current subject of the wheel menu, meaning that the parent update function
+needs to forward it to them.
 
+-}
 update : Msg subject -> State subject msg -> ( State subject msg, Cmd (Msg subject), Maybe msg )
 update msg ((State { open, keyMap, subjectActions }) as model) =
     case msg of
@@ -151,7 +187,10 @@ getAction index subject subjectActions =
 
 -- VIEW
 
+{-| Binds menu to a DOM element by creating event handlers to capture when 
+the user has hovered overed it and pressed the menu open key.
 
+-}
 withMenu : Key -> (Msg subject -> msg) -> subject -> List (Attribute variation msg)
 withMenu openKey transform subject =
     [ id (toString subject)
@@ -185,8 +224,13 @@ withMenu openKey transform subject =
         )
     ]
 
+{-| Renders the diamond menu when open, otherwise it is invisible. This can be placed anywhere 
+in the DOM because it should be absolutely positioned.
 
-view : (Msg subject -> msg) -> State subject msg -> Config subject style variation msg -> Element style variation msg
+-}
+view : (Msg subject -> msg) -> State subject msg 
+    -> Config subject style variation msg 
+    -> Element style variation msg
 view transform (State { open, keyMap, subjectActions }) (Config { attributes, actionWidth, actionHeight, styling }) =
     case open of
         Just subject ->
@@ -231,41 +275,22 @@ viewAction index actionStyle mAction =
 getActionCoordinates : Int -> ( Int, Int )
 getActionCoordinates index =
     case index of
-        0 ->
-            ( 2, 0 )
-
-        1 ->
-            ( 1, 1 )
-
-        2 ->
-            ( 3, 1 )
-
-        3 ->
-            ( 0, 2 )
-
-        4 ->
-            ( 2, 2 )
-
-        5 ->
-            ( 4, 2 )
-
-        6 ->
-            ( 1, 3 )
-
-        7 ->
-            ( 3, 3 )
-
-        8 ->
-            ( 2, 4 )
-
-        _ ->
-            ( 0, 0 )
-
-
+        0 -> ( 2, 0 )
+        1 -> ( 1, 1 )
+        2 -> ( 3, 1 )
+        3 -> ( 0, 2 )
+        4 -> ( 2, 2 )
+        5 -> ( 4, 2 )
+        6 -> ( 1, 3 )
+        7 -> ( 3, 3 )
+        8 -> ( 2, 4 )
+        _ -> ( 0, 0 )
 
 -- SUBSCRIPTIONS
 
+{-| Subscriptions for global events that effect the state of the diamond menu.
 
+-}
 subscriptions : State subject msg -> Config subject style variation msg -> Sub (Msg subject)
 subscriptions (State { open, keyMap }) (Config { openKey }) =
     Sub.batch
