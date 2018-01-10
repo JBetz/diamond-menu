@@ -50,7 +50,7 @@ initialModel =
 
 dmdConfig : Dmd.Config subject Style variation msg
 dmdConfig =
-    Dmd.defaultConfig
+    Dmd.configWithDefaults
         { modal = None
         , menu = DiamondMenu
         , grid = None
