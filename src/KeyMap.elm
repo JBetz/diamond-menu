@@ -1,21 +1,30 @@
-module KeyMap exposing (..)
+module KeyMap exposing (KeyMap, KeyLayout, keyMap)
+
+{-|
+This module is for defining mappings between keyboard layouts and menu selection
+characters.
+
+# Model
+@docs KeyMap, KeyLayout, keyMap
+
+-}
 
 import Dict exposing (Dict(..))
 import Keyboard exposing (KeyCode)
 import Keyboard.Extra exposing (Key(..), toCode)
 
-
+{-| -}
 type alias KeyMap =
     Dict KeyCode Int
 
-
+{-| -}
 type KeyLayout
     = Qwerty
     | Dvorak
     | Azerty
     | Qwertz
 
-
+{-| -}
 keyMap : KeyLayout -> KeyMap
 keyMap layout =
     case layout of
