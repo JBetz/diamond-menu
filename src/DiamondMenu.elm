@@ -1,18 +1,19 @@
-module DiamondMenu exposing (Config, Msg, State(..), config, configWithDefaults, subscriptions, update, view, withMenu)
+module DiamondMenu exposing (Config(..), Msg, State(..), configWithDefaults, subscriptions, update, view, withMenu)
 
 {-|
-This module is for creating diamond menus, an original UI element that cleanly separates
-subjects from capabilities and uses positional semantics to transcend the problems with 
-keyboard shortcuts and context menus.
+This module is for creating diamond menus, an original UI element. Their motivation is
+to separate subjects from capabilities, and use positional semantics to transcend the 
+issues with keyboard shortcuts and context menus. 
 
+Check out the [examples][] here.
 
-[examples][https://github.com/JBetz/diamond-menu/tree/master/examples]
+[examples]: https://github.com/JBetz/diamond-menu/tree/master/examples
 
 # State
 @docs State, Msg, update
 
 # Configuration
-@docs config, configWithDefaults, subscriptions
+@docs Config, configWithDefaults, subscriptions
 
 # View
 @docs view, withMenu
@@ -69,26 +70,6 @@ type alias Styling style =
     , action : style
     }
 
-{-| Constructor for fullly specified Config value. 
-
--}
-config :
-    { openKey : Key
-    , attributes : List (Attribute variation msg)
-    , actionWidth : Length
-    , actionHeight : Length
-    , styling : Styling style
-    }
-    -> Config subject style variation msg
-config { openKey, attributes, actionWidth, actionHeight, styling } =
-    Config
-        { openKey = openKey
-        , attributes = attributes
-        , actionWidth = actionWidth
-        , actionHeight = actionHeight
-        , styling = styling
-        }
-
 {-| Constructor for partially specified Config value. Open key and layout attributes
 are provided with defaults.
 
@@ -111,9 +92,7 @@ updateOpen newOpen (State { open, keyMap, subjectActions }) =
 
 -- UPDATE
 
-{-| Messages for updating menu stat.
-
--}
+{-| -}
 type Msg subject
     = OpenMenu subject
     | CloseMenu
@@ -188,7 +167,7 @@ getAction index subject subjectActions =
 -- VIEW
 
 {-| Binds menu to a DOM element by creating event handlers to capture when 
-the user has hovered overed it and pressed the menu open key.
+the user has hovered over it and pressed the menu open key.
 
 -}
 withMenu : Key -> (Msg subject -> msg) -> subject -> List (Attribute variation msg)
