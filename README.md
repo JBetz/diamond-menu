@@ -2,6 +2,9 @@
 
 Why use diamond menus?
   - to separate subjects from capabilities
-  - to save your users from memorizing keyboard shortcuts
-  - to take advantage of the hundred keys on keyboards
+  - to get rid of all the buttons that clutter UIs
+  - and take advantage of all the buttons on keyboards
+  - to eliminate keyboard shortcuts
+  - and mouse based menu navigation
+  - and take advantage of positional semantics
   - to transcend the current state of the art
