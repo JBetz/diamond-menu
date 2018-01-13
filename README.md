@@ -8,3 +8,7 @@ Why use diamond menus?
   - and mouse based menu navigation
   - and take advantage of positional semantics
   - to transcend the current state of the art
+  
+  ## Screenshots
+  
+  ![Open menu](/open-menu.png)
